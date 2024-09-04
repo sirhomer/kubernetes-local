@@ -1,0 +1,4 @@
+Instalar MetalLB en tu clúster
+Primero, asegúrate de tener MetalLB instalado en tu clúster. Puedes hacerlo ejecutando el siguiente comando:
+
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml

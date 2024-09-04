@@ -1,0 +1,44 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ip-whitelist
+spec:
+  ipWhiteList:
+    sourceRange:
+      - "192.168.1.0/32"
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: desa-gestion-laravel-ingress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`prueba2.jcastellano.com.ar`) && PathPrefix(`/apis/data`)
+      kind: Rule
+      services:
+        - name: desa-gestion-laravel-service
+          port: 80
+      middlewares:
+        - name: ip-whitelist
+  tls:
+    secretName: tls-secret
+---     
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: desa-gestion-cake-ingress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`prueba2.jcastellano.com.ar`)
+      kind: Rule
+      services:
+        - name: desa-gestion-cake-service
+          port: 80
+      middlewares:
+        - name: ip-whitelist
+  tls:
+    secretName: tls-secret

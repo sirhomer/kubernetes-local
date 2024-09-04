@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desa-copime-cake-deployment  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: desa-copime-cake
+  template:
+    metadata:
+      labels:
+        app: desa-copime-cake
+    spec:
+      containers:
+      - name: cake-copime
+        image: sirhomer/php-arm:7.0
+        ports:
+        - containerPort: 80   
+        volumeMounts:
+        - name: nfs-volume
+          mountPath: /sitio
+      volumes:
+      - name: nfs-volume
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+          
+
+---      
+apiVersion: v1
+kind: Service
+metadata:
+  name: desa-copime-cake-service
+spec:
+  selector:
+    app: desa-copime-cake
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: desa-copime-cake-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: copime.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: desa-copime-cake-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - copime.local
+    secretName: tls-secret  # Nombre del secreto que contiene el certificado TLS
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv
+spec:
+  capacity:
+    storage: 10Gi  # Ajusta según tus necesidades
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    path: /sitios/desarrollo/copime # Ruta en el servidor NFS
+    server: 192.168.1.2  # IP del servidor NFS
+  storageClassName: manual
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi  # Debe coincidir con el PV
+  storageClassName: manual

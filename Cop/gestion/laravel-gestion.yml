@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desa-gestion-laravel-deployment  
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: desa-gestion-laravel
+  template:
+    metadata:
+      labels:
+        app: desa-gestion-laravel
+    spec:
+      containers:
+      - name: cake-gestion
+        image: sirhomer/php-arm:8.2
+        ports:
+        - containerPort: 80   
+        volumeMounts:
+        - name: nfs-volume-laravel-gestion
+          mountPath: /sitio
+      volumes:
+      - name: nfs-volume-laravel-gestion
+        persistentVolumeClaim:
+          claimName: nfs-pvc-laravel-gestion
+          
+
+---      
+apiVersion: v1
+kind: Service
+metadata:
+  name: desa-gestion-laravel-service
+spec:
+  selector:
+    app: desa-gestion-laravel
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: desa-gestion-laravel-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "192.168.0.1/32"
+spec:
+  rules:
+  - host: gestion.local
+    http:
+      paths:
+      - path: /apis/data
+        pathType: Prefix
+        backend:
+          service:
+            name: desa-gestion-laravel-service
+            port:
+              number: 80
+  tls:
+  - hosts:    
+    - gestion.local
+    secretName: tls-secret  # Nombre del secreto que contiene el certificado TLS
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv-laravel-gestion
+spec:
+  capacity:
+    storage: 10Gi  # Ajusta según tus necesidades
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    path: /sitios/desarrollo/laravel-gestion # Ruta en el servidor NFS
+    server: 192.168.1.2  # IP del servidor NFS
+  storageClassName: manual
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc-laravel-gestion
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi  # Debe coincidir con el PV
+  storageClassName: manual

@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: juanpablo-certificate
+  namespace: default
+spec:
+  secretName: juanpablo-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: juanpablo.jcastellano.com.ar
+  dnsNames:
+    - juanpablo.jcastellano.com.ar

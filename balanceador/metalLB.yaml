@@ -1,0 +1,17 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: traefik-ip-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.1.250/32  # La IP específica que deseas asignar
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: traefik-l2-advertisement
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - traefik-ip-pool

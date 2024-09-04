@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desa-copime-gestion-laravel-deployment  
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: desa-copime-gestion-laravel
+  template:
+    metadata:
+      labels:
+        app: desa-copime-gestion-laravel
+    spec:
+      containers:
+      - name: laravel-copime-gestion
+        image: sirhomer/php-arm:8.2
+        ports:
+        - containerPort: 80   
+        volumeMounts:
+        - name: nfs-volume
+          mountPath: /sitio
+      volumes:
+      - name: nfs-volume
+        persistentVolumeClaim:
+          claimName: nfs-pvcgl
+          
+
+---      
+apiVersion: v1
+kind: Service
+metadata:
+  name: desa-copime-gestion-laravel-service
+spec:
+  selector:
+    app: desa-copime-gestion-laravel
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: desa-copime-gestion-laravel-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+  - host: copime-gestion.local
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: desa-copime-gestion-laravel-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - copime-gestion.local
+    secretName: tls-secret  # Nombre del secreto que contiene el certificado TLS
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pvcgl
+spec:
+  capacity:
+    storage: 10Gi  # Ajusta según tus necesidades
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    path: /sitios/desarrollo/pagina-copime-2-laravel # Ruta en el servidor NFS
+    server: 192.168.1.2  # IP del servidor NFS
+  storageClassName: manual
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name:  nfs-pvcgl
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi  # Debe coincidir con el PV
+  storageClassName: manual
